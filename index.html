@@ -354,7 +354,7 @@
                     column.classList.add('disabled');
                 }
 
-                for (let row = ROWS - 1; row >= 0; row--) {
+                for (let row = 0; row < ROWS; row++) {
                     const cell = document.createElement('div');
                     cell.className = 'cell';
                     
