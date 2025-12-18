@@ -145,7 +145,7 @@
 
         .column {
             display: flex;
-            flex-direction: column-reverse;
+            flex-direction: column;
             gap: 8px;
             cursor: pointer;
             padding: 5px;
@@ -272,11 +272,11 @@
 <body>
     <div class="container">
         <h1>🎮 Connect Four</h1>
-        <p class="subtitle">Play against Minimax AI</p>
+        <p class="subtitle">Play against Minimax Agent</p>
 
         <div class="controls">
             <button class="btn-primary" onclick="startGame(true)">You Go First</button>
-            <button class="btn-primary" onclick="startGame(false)">AI Goes First</button>
+            <button class="btn-primary" onclick="startGame(false)">Agent Goes First</button>
             <button class="btn-secondary" onclick="resetGame()">Reset</button>
         </div>
 
@@ -295,7 +295,7 @@
         </div>
 
         <div class="thinking" id="thinking" style="display: none;">
-            AI is thinking...
+            Agent is thinking...
         </div>
 
         <div class="stats">
@@ -305,7 +305,7 @@
             </div>
             <div class="stat">
                 <div class="stat-value" id="aiWins">0</div>
-                <div class="stat-label">AI Wins</div>
+                <div class="stat-label">Agent Wins</div>
             </div>
             <div class="stat">
                 <div class="stat-value" id="draws">0</div>
@@ -354,7 +354,7 @@
                     column.classList.add('disabled');
                 }
 
-                for (let row = 0; row < ROWS; row++) {
+                for (let row = ROWS - 1; row >= 0; row--) {
                     const cell = document.createElement('div');
                     cell.className = 'cell';
                     
@@ -598,7 +598,7 @@
                     const won = makeMove(col, -1);
                     if (won) {
                         renderBoard();
-                        endGame('AI wins! 🤖');
+                        endGame('Agent wins! 🤖');
                         aiWins++;
                         updateStats();
                         document.getElementById('thinking').style.display = 'none';
@@ -648,7 +648,7 @@
                 document.getElementById('thinking').style.display = 'none';
 
                 if (won) {
-                    endGame('AI wins! 🤖');
+                    endGame('Agent wins! 🤖');
                     aiWins++;
                     updateStats();
                     return;
@@ -676,7 +676,7 @@
                 status.textContent = 'Your turn - Click a column';
             } else {
                 status.className = 'status ai-turn';
-                status.textContent = 'AI is thinking...';
+                status.textContent = 'Agent is thinking...';
             }
         }
 
