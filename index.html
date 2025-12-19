@@ -92,13 +92,69 @@
 
         .difficulty button {
             flex: 1;
+        }
+
+        .first-player-choice {
+            display: flex;
+            gap: 10px;
+        }
+
+        .first-player-choice button {
+            flex: 1;
+        }
+
+        .btn-choice {
+            padding: 12px 20px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
             background: #f5f5f5;
             color: #666;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-choice:hover {
+            border-color: #bbb;
+            background: #e8e8e8;
+        }
+
+        .btn-choice.selected {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .btn-start {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-start:hover:not(:disabled) {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-start:disabled {
+            background: #ccc;
+            color: #888;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
         }
 
         .difficulty button.active {
-            background: #667eea;
-            color: white;
+            /* Removed - using .selected now */
         }
 
         .status {
@@ -479,19 +535,23 @@
             <div style="margin-bottom: 15px;">
                 <label style="display: block; margin-bottom: 8px; color: #666; font-weight: 600;">Choose Difficulty:</label>
                 <div class="difficulty">
-                    <button onclick="setDifficulty(4)" class="active" data-difficulty="4">Easy</button>
-                    <button onclick="setDifficulty(6)" data-difficulty="6">Medium</button>
-                    <button onclick="setDifficulty(8)" data-difficulty="8">Hard</button>
+                    <button onclick="selectDifficulty(4)" class="btn-choice" data-difficulty="4">Easy</button>
+                    <button onclick="selectDifficulty(6)" class="btn-choice" data-difficulty="6">Medium</button>
+                    <button onclick="selectDifficulty(8)" class="btn-choice" data-difficulty="8">Hard</button>
                 </div>
             </div>
 
-            <div style="margin-bottom: 15px;">
+            <div style="margin-bottom: 20px;">
                 <label style="display: block; margin-bottom: 8px; color: #666; font-weight: 600;">Who Goes First?</label>
-                <div class="controls">
-                    <button class="btn-primary" onclick="startGame(true)">I'll Go First</button>
-                    <button class="btn-primary" onclick="startGame(false)">Agent Goes First</button>
+                <div class="first-player-choice">
+                    <button onclick="selectFirstPlayer(true)" class="btn-choice" data-first="human">I'll Go First</button>
+                    <button onclick="selectFirstPlayer(false)" class="btn-choice" data-first="agent">Agent Goes First</button>
                 </div>
             </div>
+
+            <button class="btn-start" id="startButton" onclick="startGameWithSettings()" disabled>
+                Start Game
+            </button>
         </div>
 
         <div class="game-active" id="gameActive" style="display: none;">
@@ -554,8 +614,12 @@
         let draws = 0;
         let playerName = '';
 
-        // Google Sheets webhook URL - YOU NEED TO REPLACE THIS
+        // Google Sheets webhook URL
         const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbznI0J0SHyjpRIMcKiRKDLO3P6XPreqbW3FGWeOq8Zj07VhNDZbOfBjuebl8n3oMX0w9Q/exec';
+
+        // Selection state
+        let difficultySelected = false;
+        let firstPlayerSelected = null; // true = human, false = agent
 
         // Initialize board
         function initBoard() {
@@ -976,14 +1040,54 @@
         }
 
         // Set difficulty
-        function setDifficulty(depth) {
+        function selectDifficulty(depth) {
             difficulty = depth;
-            document.querySelectorAll('.difficulty button').forEach(btn => {
-                btn.classList.remove('active');
+            difficultySelected = true;
+
+            document.querySelectorAll('.difficulty .btn-choice').forEach(btn => {
+                btn.classList.remove('selected');
                 if (parseInt(btn.dataset.difficulty) === depth) {
-                    btn.classList.add('active');
+                    btn.classList.add('selected');
                 }
             });
+
+            checkCanStart();
+        }
+
+        // Select first player
+        function selectFirstPlayer(humanFirst) {
+            firstPlayerSelected = humanFirst;
+
+            document.querySelectorAll('.first-player-choice .btn-choice').forEach(btn => {
+                btn.classList.remove('selected');
+                if ((humanFirst && btn.dataset.first === 'human') || 
+                    (!humanFirst && btn.dataset.first === 'agent')) {
+                    btn.classList.add('selected');
+                }
+            });
+
+            checkCanStart();
+        }
+
+        // Check if can enable start button
+        function checkCanStart() {
+            const startBtn = document.getElementById('startButton');
+            if (difficultySelected && firstPlayerSelected !== null) {
+                startBtn.disabled = false;
+            } else {
+                startBtn.disabled = true;
+            }
+        }
+
+        // Start game with selected settings
+        function startGameWithSettings() {
+            if (firstPlayerSelected === null) return;
+            startGame(firstPlayerSelected);
+        }
+
+        // Set difficulty (legacy compatibility)
+        function setDifficulty(depth) {
+            selectDifficulty(depth);
         }
 
         // Set player name
