@@ -261,65 +261,26 @@
         }
 
         @media (max-width: 600px) {
-            .container {
-                padding: 20px 10px;
-            }
-
-            .cell {
-                width: 40px;
-                height: 40px;
-            }
-
-            .column {
-                gap: 6px;
-                padding: 3px;
-            }
-
-            .row-container {
-                gap: 6px;
-            }
-
-            .board {
+            body {
                 padding: 10px;
             }
 
-            h1 {
-                font-size: 1.5em;
+            .container {
+                padding: 15px 10px;
             }
 
-            button {
-                min-width: 90px;
-                font-size: 12px;
-                padding: 10px 15px;
-            }
-
-            .controls {
-                gap: 8px;
-            }
-
-            .difficulty {
-                gap: 8px;
-            }
-
-            .status {
-                font-size: 1em;
-                padding: 12px;
-            }
-        }
-
-        @media (max-width: 400px) {
             .cell {
                 width: 35px;
                 height: 35px;
             }
 
             .column {
-                gap: 5px;
+                gap: 4px;
                 padding: 2px;
             }
 
             .row-container {
-                gap: 5px;
+                gap: 4px;
             }
 
             .board {
@@ -327,7 +288,90 @@
             }
 
             h1 {
+                font-size: 1.4em;
+                margin-bottom: 8px;
+            }
+
+            .subtitle {
+                font-size: 0.85em;
+                margin-bottom: 15px;
+            }
+
+            button {
+                min-width: 80px;
+                font-size: 11px;
+                padding: 10px 12px;
+            }
+
+            .controls {
+                gap: 6px;
+            }
+
+            .difficulty {
+                gap: 6px;
+            }
+
+            .status {
+                font-size: 0.95em;
+                padding: 10px;
+            }
+
+            .stat-value {
                 font-size: 1.3em;
+            }
+
+            .stat-label {
+                font-size: 0.8em;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .cell {
+                width: 30px;
+                height: 30px;
+            }
+
+            .column {
+                gap: 3px;
+                padding: 1px;
+            }
+
+            .row-container {
+                gap: 3px;
+            }
+
+            .board {
+                padding: 6px;
+            }
+
+            h1 {
+                font-size: 1.2em;
+            }
+
+            button {
+                min-width: 70px;
+                font-size: 10px;
+                padding: 8px 10px;
+            }
+        }
+
+        @media (max-width: 350px) {
+            .cell {
+                width: 28px;
+                height: 28px;
+            }
+
+            .column {
+                gap: 2px;
+                padding: 1px;
+            }
+
+            .row-container {
+                gap: 2px;
+            }
+
+            .board {
+                padding: 5px;
             }
         }
 
@@ -403,6 +447,21 @@
         .player-name strong {
             color: #667eea;
         }
+
+        .game-setup {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+
+        .game-setup label {
+            font-size: 0.9em;
+        }
+
+        .game-active {
+            margin-bottom: 15px;
+        }
     </style>
 </head>
 <body>
@@ -414,20 +473,35 @@
             Playing as: <strong id="playerNameText"></strong>
         </div>
 
-        <div class="controls">
-            <button class="btn-primary" onclick="startGame(true)">You Go First</button>
-            <button class="btn-primary" onclick="startGame(false)">Agent Goes First</button>
-            <button class="btn-secondary" onclick="resetGame()">Reset</button>
+        <div class="game-setup" id="gameSetup">
+            <h3 style="text-align: center; color: #333; margin-bottom: 15px; font-size: 1.1em;">Start New Game</h3>
+            
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 8px; color: #666; font-weight: 600;">Choose Difficulty:</label>
+                <div class="difficulty">
+                    <button onclick="setDifficulty(4)" class="active" data-difficulty="4">Easy</button>
+                    <button onclick="setDifficulty(6)" data-difficulty="6">Medium</button>
+                    <button onclick="setDifficulty(8)" data-difficulty="8">Hard</button>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 8px; color: #666; font-weight: 600;">Who Goes First?</label>
+                <div class="controls">
+                    <button class="btn-primary" onclick="startGame(true)">I'll Go First</button>
+                    <button class="btn-primary" onclick="startGame(false)">Agent Goes First</button>
+                </div>
+            </div>
         </div>
 
-        <div class="difficulty">
-            <button onclick="setDifficulty(4)" class="active" data-difficulty="4">Easy</button>
-            <button onclick="setDifficulty(6)" data-difficulty="6">Medium</button>
-            <button onclick="setDifficulty(8)" data-difficulty="8">Hard</button>
+        <div class="game-active" id="gameActive" style="display: none;">
+            <div style="text-align: center; margin-bottom: 15px;">
+                <button class="btn-secondary" onclick="newGame()" style="min-width: 150px;">New Game</button>
+            </div>
         </div>
 
         <div class="status your-turn" id="status">
-            Click a button to start!
+            Select your settings and click a button to start!
         </div>
 
         <div class="board-wrapper">
@@ -481,7 +555,7 @@
         let playerName = '';
 
         // Google Sheets webhook URL - YOU NEED TO REPLACE THIS
-        const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbznI0J0SHyjpRIMcKiRKDLO3P6XPreqbW3FGWeOq8Zj07VhNDZbOfBjuebl8n3oMX0w9Q/exec';
+        const SHEETS_URL = 'YOUR_GOOGLE_SHEETS_WEBHOOK_URL_HERE';
 
         // Initialize board
         function initBoard() {
@@ -872,13 +946,17 @@
             initBoard();
             updateStatus();
 
+            // Hide setup, show active game controls
+            document.getElementById('gameSetup').style.display = 'none';
+            document.getElementById('gameActive').style.display = 'block';
+
             if (!humanGoesFirst) {
                 setTimeout(makeAIMove, 500);
             }
         }
 
-        // Reset game
-        function resetGame() {
+        // New game (reset but keep showing active controls)
+        function newGame() {
             initBoard();
             currentPlayer = humanFirst ? 1 : -1;
             updateStatus();
@@ -886,6 +964,15 @@
             if (!humanFirst) {
                 setTimeout(makeAIMove, 500);
             }
+        }
+
+        // Reset game (back to setup)
+        function resetGame() {
+            initBoard();
+            document.getElementById('gameSetup').style.display = 'block';
+            document.getElementById('gameActive').style.display = 'none';
+            document.getElementById('status').textContent = 'Select your settings and click a button to start!';
+            document.getElementById('status').className = 'status your-turn';
         }
 
         // Set difficulty
