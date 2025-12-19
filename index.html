@@ -14,6 +14,7 @@
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #434343 0%, #000000 100%);
             min-height: 100vh;
             display: flex;
             justify-content: center;
@@ -135,6 +136,11 @@
             padding: 15px;
             display: inline-block;
             box-shadow: inset 0 5px 15px rgba(0,0,0,0.2);
+            transition: all 0.3s;
+        }
+
+        .board.active {
+            box-shadow: 0 0 30px rgba(102, 126, 234, 0.6), inset 0 5px 15px rgba(0,0,0,0.2);
         }
 
         .board-wrapper {
@@ -153,17 +159,19 @@
             transition: background 0.2s;
         }
 
-        .column:hover {
-            background: rgba(255,255,255,0.1);
+        .column:not(.disabled):hover {
+            background: rgba(255,255,255,0.2);
+            cursor: pointer;
         }
 
         .column.disabled {
             cursor: not-allowed;
-            opacity: 0.5;
+            opacity: 0.6;
         }
 
         .column.disabled:hover {
             background: transparent;
+            cursor: not-allowed;
         }
 
         .row-container {
@@ -267,12 +275,89 @@
                 font-size: 12px;
             }
         }
+
+        /* Name input modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+        }
+
+        .modal h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .modal input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+
+        .modal input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .modal button {
+            width: 100%;
+            padding: 12px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .modal button:hover {
+            background: #5568d3;
+        }
+
+        .player-name {
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+            color: #666;
+        }
+
+        .player-name strong {
+            color: #667eea;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>🎮 Connect Four</h1>
-        <p class="subtitle">Play against Minimax Agent</p>
+        <p class="subtitle">Play against Agent</p>
+
+        <div class="player-name" id="playerNameDisplay" style="display: none;">
+            Playing as: <strong id="playerNameText"></strong>
+        </div>
 
         <div class="controls">
             <button class="btn-primary" onclick="startGame(true)">You Go First</button>
@@ -314,6 +399,16 @@
         </div>
     </div>
 
+    <!-- Name Input Modal -->
+    <div class="modal active" id="nameModal">
+        <div class="modal-content">
+            <h2>Welcome to Connect Four!</h2>
+            <p>Enter your name to start playing</p>
+            <input type="text" id="playerNameInput" placeholder="Your name" maxlength="30" />
+            <button onclick="setPlayerName()">Start Playing</button>
+        </div>
+    </div>
+
     <script>
         // Game state
         const ROWS = 6;
@@ -328,6 +423,10 @@
         let humanWins = 0;
         let aiWins = 0;
         let draws = 0;
+        let playerName = '';
+
+        // Google Sheets webhook URL - YOU NEED TO REPLACE THIS
+        const SHEETS_URL = 'YOUR_GOOGLE_SHEETS_WEBHOOK_URL_HERE';
 
         // Initialize board
         function initBoard() {
@@ -341,6 +440,13 @@
             const boardEl = document.getElementById('board');
             boardEl.innerHTML = '';
 
+            // Add active class if it's player's turn (currentPlayer === 1)
+            if (currentPlayer === 1 && !gameOver) {
+                boardEl.classList.add('active');
+            } else {
+                boardEl.classList.remove('active');
+            }
+
             const rowContainer = document.createElement('div');
             rowContainer.className = 'row-container';
 
@@ -349,8 +455,9 @@
                 column.className = 'column';
                 column.onclick = () => handleHumanMove(col);
 
-                // Check if column is full
-                if (board[0][col] !== 0 || gameOver || currentPlayer === -1) {
+                // Disable if: column full, game over, OR not player's turn
+                const isDisabled = board[0][col] !== 0 || gameOver || currentPlayer !== 1;
+                if (isDisabled) {
                     column.classList.add('disabled');
                 }
 
@@ -452,6 +559,7 @@
                 endGame('You win! 🎉');
                 humanWins++;
                 updateStats();
+                sendToSheets('win');
                 return;
             }
 
@@ -459,6 +567,7 @@
                 endGame('Draw! 🤝');
                 draws++;
                 updateStats();
+                sendToSheets('draw');
                 return;
             }
 
@@ -601,6 +710,7 @@
                         endGame('Agent wins! 🤖');
                         aiWins++;
                         updateStats();
+                        sendToSheets('loss');
                         document.getElementById('thinking').style.display = 'none';
                         return;
                     }
@@ -644,13 +754,16 @@
                 }
 
                 const won = makeMove(bestCol, -1);
-                renderBoard();
+                
+                currentPlayer = 1;  // Switch to player FIRST
+                renderBoard();      // THEN render board
                 document.getElementById('thinking').style.display = 'none';
 
                 if (won) {
                     endGame('Agent wins! 🤖');
                     aiWins++;
                     updateStats();
+                    sendToSheets('loss');
                     return;
                 }
 
@@ -658,10 +771,10 @@
                     endGame('Draw! 🤝');
                     draws++;
                     updateStats();
+                    sendToSheets('draw');
                     return;
                 }
 
-                currentPlayer = 1;
                 updateStatus();
             }, 100);
         }
@@ -729,6 +842,54 @@
                     btn.classList.add('active');
                 }
             });
+        }
+
+        // Set player name
+        function setPlayerName() {
+            const input = document.getElementById('playerNameInput');
+            const name = input.value.trim();
+            
+            if (!name) {
+                alert('Please enter your name!');
+                return;
+            }
+            
+            playerName = name;
+            document.getElementById('nameModal').classList.remove('active');
+            document.getElementById('playerNameText').textContent = playerName;
+            document.getElementById('playerNameDisplay').style.display = 'block';
+        }
+
+        // Send result to Google Sheets
+        async function sendToSheets(result) {
+            if (!SHEETS_URL || SHEETS_URL === 'YOUR_GOOGLE_SHEETS_WEBHOOK_URL_HERE') {
+                console.log('Google Sheets not configured');
+                return;
+            }
+
+            const data = {
+                timestamp: new Date().toISOString(),
+                playerName: playerName,
+                result: result, // 'win', 'loss', or 'draw'
+                difficulty: difficulty === 4 ? 'Easy' : difficulty === 6 ? 'Medium' : 'Hard',
+                humanFirst: humanFirst,
+                totalWins: humanWins,
+                totalLosses: aiWins,
+                totalDraws: draws
+            };
+
+            try {
+                await fetch(SHEETS_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+            } catch (error) {
+                console.error('Error sending to sheets:', error);
+            }
         }
 
         // Initialize
