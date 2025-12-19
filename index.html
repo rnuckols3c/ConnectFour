@@ -885,7 +885,7 @@
                     unmakeMove(col);
                 }
 
-                // Minimax search
+                // Minimax search with difficulty adjustments
                 let bestScore = -Infinity;
                 let bestCol = validMoves[0];
 
@@ -895,9 +895,97 @@
                     Math.abs(a - centerCol) - Math.abs(b - centerCol)
                 );
 
+                // Adjust search depth based on difficulty
+                let searchDepth = difficulty - 1;
+                
+                // Easy (depth 4): Make it beatable - reduce to depth 2 and add mistakes
+                if (difficulty === 4) {
+                    searchDepth = 2;
+                    
+                    // 30% chance to make a random move (mistake)
+                    if (Math.random() < 0.3) {
+                        bestCol = validMoves[Math.floor(Math.random() * validMoves.length)];
+                        const won = makeMove(bestCol, -1);
+                        
+                        setTimeout(() => {
+                            currentPlayer = 1;
+                            renderBoard();
+                            document.getElementById('thinking').style.display = 'none';
+
+                            if (won) {
+                                endGame('Agent wins! 🤖');
+                                aiWins++;
+                                updateStats();
+                                sendToSheets('loss');
+                                return;
+                            }
+
+                            if (getValidMoves().length === 0) {
+                                endGame('Draw! 🤝');
+                                draws++;
+                                updateStats();
+                                sendToSheets('draw');
+                                return;
+                            }
+
+                            updateStatus();
+                        }, 600);
+                        return;
+                    }
+                }
+                
+                // Medium (depth 6): Slightly beatable - reduce to depth 4 and add small mistakes
+                if (difficulty === 6) {
+                    searchDepth = 4;
+                    
+                    // 15% chance to make a suboptimal move
+                    if (Math.random() < 0.15) {
+                        // Pick second or third best move instead of best
+                        const scores = [];
+                        for (const col of orderedMoves) {
+                            makeMove(col, -1);
+                            const score = minimax(searchDepth, -Infinity, Infinity, false);
+                            unmakeMove(col);
+                            scores.push({ col, score });
+                        }
+                        scores.sort((a, b) => b.score - a.score);
+                        
+                        // Pick 2nd or 3rd best move
+                        const pickIndex = Math.random() < 0.5 ? 1 : 2;
+                        bestCol = scores[Math.min(pickIndex, scores.length - 1)].col;
+                        
+                        const won = makeMove(bestCol, -1);
+                        
+                        setTimeout(() => {
+                            currentPlayer = 1;
+                            renderBoard();
+                            document.getElementById('thinking').style.display = 'none';
+
+                            if (won) {
+                                endGame('Agent wins! 🤖');
+                                aiWins++;
+                                updateStats();
+                                sendToSheets('loss');
+                                return;
+                            }
+
+                            if (getValidMoves().length === 0) {
+                                endGame('Draw! 🤝');
+                                draws++;
+                                updateStats();
+                                sendToSheets('draw');
+                                return;
+                            }
+
+                            updateStatus();
+                        }, 600);
+                        return;
+                    }
+                }
+
                 for (const col of orderedMoves) {
                     makeMove(col, -1);
-                    const score = minimax(difficulty - 1, -Infinity, Infinity, false);
+                    const score = minimax(searchDepth, -Infinity, Infinity, false);
                     unmakeMove(col);
 
                     if (score > bestScore) {
@@ -908,27 +996,30 @@
 
                 const won = makeMove(bestCol, -1);
                 
-                currentPlayer = 1;  // Switch to player FIRST
-                renderBoard();      // THEN render board
-                document.getElementById('thinking').style.display = 'none';
+                // Delay so human sees the piece drop
+                setTimeout(() => {
+                    currentPlayer = 1;  // Switch to player FIRST
+                    renderBoard();      // THEN render board
+                    document.getElementById('thinking').style.display = 'none';
 
-                if (won) {
-                    endGame('Agent wins! 🤖');
-                    aiWins++;
-                    updateStats();
-                    sendToSheets('loss');
-                    return;
-                }
+                    if (won) {
+                        endGame('Agent wins! 🤖');
+                        aiWins++;
+                        updateStats();
+                        sendToSheets('loss');
+                        return;
+                    }
 
-                if (getValidMoves().length === 0) {
-                    endGame('Draw! 🤝');
-                    draws++;
-                    updateStats();
-                    sendToSheets('draw');
-                    return;
-                }
+                    if (getValidMoves().length === 0) {
+                        endGame('Draw! 🤝');
+                        draws++;
+                        updateStats();
+                        sendToSheets('draw');
+                        return;
+                    }
 
-                updateStatus();
+                    updateStatus();
+                }, 600); // 600ms delay to see piece drop
             }, 100);
         }
 
