@@ -261,9 +261,26 @@
         }
 
         @media (max-width: 600px) {
+            .container {
+                padding: 20px 10px;
+            }
+
             .cell {
-                width: 45px;
-                height: 45px;
+                width: 40px;
+                height: 40px;
+            }
+
+            .column {
+                gap: 6px;
+                padding: 3px;
+            }
+
+            .row-container {
+                gap: 6px;
+            }
+
+            .board {
+                padding: 10px;
             }
 
             h1 {
@@ -271,8 +288,46 @@
             }
 
             button {
-                min-width: 100px;
+                min-width: 90px;
                 font-size: 12px;
+                padding: 10px 15px;
+            }
+
+            .controls {
+                gap: 8px;
+            }
+
+            .difficulty {
+                gap: 8px;
+            }
+
+            .status {
+                font-size: 1em;
+                padding: 12px;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .cell {
+                width: 35px;
+                height: 35px;
+            }
+
+            .column {
+                gap: 5px;
+                padding: 2px;
+            }
+
+            .row-container {
+                gap: 5px;
+            }
+
+            .board {
+                padding: 8px;
+            }
+
+            h1 {
+                font-size: 1.3em;
             }
         }
 
