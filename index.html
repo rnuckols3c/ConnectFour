@@ -426,7 +426,7 @@
         let playerName = '';
 
         // Google Sheets webhook URL - YOU NEED TO REPLACE THIS
-        const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbznI0J0SHyjpRIMcKiRKDLO3P6XPreqbW3FGWeOq8Zj07VhNDZbOfBjuebl8n3oMX0w9Q/exec';
+        const SHEETS_URL = 'YOUR_GOOGLE_SHEETS_WEBHOOK_URL_HERE';
 
         // Initialize board
         function initBoard() {
@@ -862,7 +862,7 @@
 
         // Send result to Google Sheets
         async function sendToSheets(result) {
-            if (!SHEETS_URL || SHEETS_URL === 'YOUR_GOOGLE_SHEETS_WEBHOOK_URL_HERE') {
+            if (!SHEETS_URL) {
                 console.log('Google Sheets not configured');
                 return;
             }
@@ -887,6 +887,7 @@
                     },
                     body: JSON.stringify(data)
                 });
+                console.log('Result sent to Google Sheets');
             } catch (error) {
                 console.error('Error sending to sheets:', error);
             }
